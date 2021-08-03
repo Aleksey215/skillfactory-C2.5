@@ -1,4 +1,5 @@
 # C2.5. Итоговое практическое задание
+from random import randint
 class Dot:
     # Прием параметров х и у для координат точек
     def __init__(self, x, y):
@@ -174,18 +175,90 @@ class Board:
                 if ship.lives == 0:
                     # Увеличивается счетчик уничтоженных кораблей
                     self.count += 1
+                    # Контур корабля становится видимым для пользователя
                     self.contour(ship, verb=True)
                     print("Корабль уничтожен!")
+                    # Завершение хода
                     return False
+                # Если жизни еще есть
                 else:
+                    # то выводится сообщение
                     print("Корабль ранен!")
+                    # и ход продолжается
                     return True
+        # Если введенная точка не входит в точки корабля
+        # то ставится символ "*"
         self.field[d.x][d.y] = "*"
         print("Мимо!")
+        # и ход заканчивается
         return False
-
+    # Обнуление списка занятых точек перед началом игры
+    # данный список использовался для расстановки кораблей
     def begin(self):
          self.busy = []
+
+# Класс игрока (родитель для ИИ и пользователя)
+class Player:
+    def __init__(self, board, enemy):
+        self.board = board
+        self.enemy = enemy
+
+    # создан для дочерних классов
+    def ask(self):
+        raise NotImplementedError()
+
+    # Метод хода
+    def move(self):
+        # В бесконечном цикле
+        while True:
+            try:
+                # запрашиваются координаты
+                target = self.ask()
+                # и проверяется сделанный выстрел
+                repeat = self.enemy.shot(target)
+                # если выстрел успешный, то повторяем
+                return repeat
+            # если нет то срабатывает исключение
+            except BoardException as e:
+                print(e)
+
+# Класс ИИ дочерний от класса игрок
+class Ai(Player):
+    # Метод запроса на ввод координат для выстрела
+    def ask(self):
+        # ввод случайных чисел для координат
+        d = Dot(randint(0, 5), randint(0, 5))
+        print(f"Ход ИИ: {d.x + 1} {d.y + 1}")
+        return d
+
+# Дочерний класс от класса игрок
+class User(Player):
+    # Запрос на ввод координат
+    def ask(self):
+        # В бесконечном цикле
+        while True:
+            # запись введенных координат в переменную
+            cords = input("Ваш ход: ").split
+
+            # проверка, что введи именно две координаты
+            if len(cords) != 2:
+                #  иначе ошибка
+                print("Введите две координаты!")
+                continue
+            # через множественное присвоение задаем х и у
+            x, y = cords
+
+            # проверка, что введены числа
+            if not (x.isdigit()) or not (y.isdigit()):
+                print("Введите числа!")
+                continue
+
+            # запись в формате чисел
+            x, y = int(x), int(y)
+
+            # возврат готовой точки с поправкой на индекс
+            return Dot(x - 1, y - 1)
+
 
 
 b = Board()
