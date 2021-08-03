@@ -1,6 +1,4 @@
 # C2.5. Итоговое практическое задание
-
-
 class Dot:
     # Прием параметров х и у для координат точек
     def __init__(self, x, y):
@@ -153,19 +151,28 @@ class Board:
         # и для корабля создается контур
         self.contour(ship)
 
+    # Выстрел
     def shot(self, d):
+        # Если введенная точка за полем - активируется исключение
         if self.out(d):
             raise OutBoardException()
+
+        # Если введенная точка входит в список занятых, так же исключение
         if d in self.busy:
             raise RepeatBoardException()
-
+        # Если не возникло исключений то точка добавляется в список занятых
         self.busy.append(d)
 
         for ship in self.ships:
+            # Если точка входит в точки корабля, то это попадание
             if ship.shooten(d):
+                # Уменьшается жизнь
                 ship.lives -= 1
+                # В место попадания ставится "Х"
                 self.field[d.x][d.y] = "X"
+                # Если жизни кончались
                 if ship.lives == 0:
+                    # Увеличивается счетчик уничтоженных кораблей
                     self.count += 1
                     self.contour(ship, verb=True)
                     print("Корабль уничтожен!")
