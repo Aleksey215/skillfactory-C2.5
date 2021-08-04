@@ -1,5 +1,6 @@
 # C2.5. Итоговое практическое задание
 from random import randint
+
 class Dot:
     # Прием параметров х и у для координат точек
     def __init__(self, x, y):
@@ -70,7 +71,7 @@ class Ship:
 # Создание класса игрового поля (Доска)
 class Board:
     # определяется видимость поля и его размер
-    def __init__(self, hid = False, size = 6):
+    def __init__(self, hid = False, size=6):
         # видимость поля
         self.hid = hid
         # размер поля
@@ -127,7 +128,7 @@ class Board:
                     # и если контур видемый
                     if verb:
                         # то в клетки записывается символ "*"
-                        self.field[cur.x][cur.y] = "*"
+                        self.field[cur.x][cur.y] = "."
                     # добавление точки в список занятых,
                     # видимость контура не влияет на это условие
                     self.busy.append(cur)
@@ -187,8 +188,8 @@ class Board:
                     # и ход продолжается
                     return True
         # Если введенная точка не входит в точки корабля
-        # то ставится символ "*"
-        self.field[d.x][d.y] = "*"
+        # то ставится символ "."
+        self.field[d.x][d.y] = "."
         print("Мимо!")
         # и ход заканчивается
         return False
@@ -237,14 +238,11 @@ class User(Player):
     def ask(self):
         # В бесконечном цикле
         while True:
-            # запись введенных координат в переменную
-            cords = input("Ваш ход: ").split
-
-            # проверка, что введи именно две координаты
+            cords = input("Ваш ход: ").split()
             if len(cords) != 2:
-                #  иначе ошибка
                 print("Введите две координаты!")
                 continue
+
             # через множественное присвоение задаем х и у
             x, y = cords
 
@@ -261,35 +259,129 @@ class User(Player):
 
 # класс игра
 class Game:
+    # создание конструктора
+    # размер доски по умолчанию равен 6
+    def __init__(self, size = 6):
+        self.size = size
+        # создание доски для игрока
+        pl = self.random_board()
+        # создание доски для компьютера
+        co = self.random_board()
+        # у компьютера доска скрыта
+        co.hid = True
+
+        # создание игроков
+        self.ai = Ai(co, pl)
+        self.us = User(pl, co)
+
     # метод создания доски с расстановленными кораблями
     def try_board(self):
         # список с длинами кораблей
         lens = [3, 2, 2, 1, 1, 1, 1]
+        # создаем доску заданного размера
         board = Board(size=self.size)
+        # кол-во попыток
         attempts = 0
+        # для каждого корабля l в списке lens
         for l in lens:
+            # в бесконечном цикле
             while True:
+                # увеличиваем попытки
                 attempts += 1
+                # если кол-во попыток больше 2000
                 if attempts > 2000:
+                    # возвращаем пустое поле
                     return None
-                ship = Ship(Dot(randint(0, self.size), randint(0, self.size)), l, randint(0, 1))
+                # пока кол-во попыток меньше 2000, задаем рандомную точку для носа корабля,
+                # случайно определяем положение корабля (вертикальное или горизонтальное),
+                # задаем длину корабля
+                ship = Ship(Dot(randint(0, self.size), randint(0, self.size)), randint(0, 1), l)
                 try:
+                    # добавление корабля
                     board.add_ship(ship)
                     break
-                except BoardWrongShipException:
+                except WrongPositionOnBoardException:
                     pass
+        # обнуление списка busy
         board.begin()
+        # возврат доски
         return board
 
+    # метод гарантированного создания доски
     def random_board(self):
+        # создание пустой доски
         board = None
+        # пока доска пустая
         while board is None:
+            # вызывается метод попытки создания доски
             board = self.try_board()
+        # возвращаем доску
         return board
 
+    def greet(self):
+        print("___________________________")
+        print("<<<  Добро пожаловать   >>>")
+        print("<<<       в игру        >>>")
+        print("<<<    Морской бой!     >>>")
+        print("___________________________")
+        print("<<<   чтобы выстрелить  >>>")
+        print("<<<    введите х и у    >>>")
+        print("<<<  х - номер строки   >>>")
+        print("<<<  у - номер столбца  >>>")
 
-b = Board()
-b.add_ship(Ship(Dot(1, 2), 0, 3))
-print(b.busy)
+    # создание игрового цикла
+    def loop(self):
+        # номер хода
+        num = 0
+        # в бесконечном цикле
+        while True:
+            # выводим доски с подписью
+            print("-" * 27)
+            print("Доска пользователя:")
+            print(self.us.board)
+            print("-" * 27)
+            print("Доска компьютера:")
+            print(self.ai.board)
+            print("-" * 27)
+            # если номер хода четный - ходит игрок
+            if num % 2 == 0:
+                print("Ходит пользователь!")
+                # вызываем метод хода
+                repeat = self.us.move()
+            else:
+                # если номер хода не четный - ходит компьютер
+                print("Ходит компьютер!")
+                # метод хода
+                repeat = self.ai.move()
+            # если ход надо повторить
+            if repeat:
+                # номер хода уменьшается на 1
+                # чтобы не увеличить номер хода
+                num -= 1
+
+            # если кол-во уничтоженных кораблей
+            # на доске компьютера равно 7
+            # то победил игрок
+            if self.ai.board.count == 7:
+                print("-" * 20)
+                print("Пользователь выиграл!")
+                # остановка цикла
+                break
+
+            # если кол-во уничтоженных кораблей
+            # на доске игрока равно 7
+            # то победил компьютер
+            if self.us.board.count == 7:
+                print("-" * 20)
+                print("Компьютер выиграл!")
+                break
+            # увеличение номера хода
+            num += 1
+    def start(self):
+        self.greet()
+        self.loop()
+g = Game()
+g.start()
+
 
 
