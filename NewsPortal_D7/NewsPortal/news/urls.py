@@ -10,13 +10,16 @@ from django.urls import path
 from .views import PostList, PostsSearch, PostDetailView, \
     PostCreateView, PostUpdateView, PostDeleteView, \
     CategoryList, add_subscribe, del_subscribe, CategoryDetail
+# Д8 кэширование
+from django.views.decorators.cache import cache_page
 
 # создаем список всех url-адресов данного приложения
 # мысленно добавляем к каждому адресу: posts/ из главного файла
 # в переменной name указываем имя шаблона для визуализации
 urlpatterns = [
+    # D8 добавил кеширование
     # по пустому адресу мы получаем список публикаций как представление
-    path('', PostList.as_view(), name='posts'),  # т. к. сам по себе это класс,
+    path('', cache_page(60)(PostList.as_view()), name='posts'),  # т. к. сам по себе это класс,
     # то нам надо представить этот класс в виде view. Для этого вызываем метод as_view
 
     # адрес для поиска постов
@@ -36,10 +39,13 @@ urlpatterns = [
     path('delete/<int:pk>', PostDeleteView.as_view(), name='post_delete'),
 
     # адрес для просмотра категорий
-    path('categories/', CategoryList.as_view(), name='categories'),
+    # Д8 - кэширование (сохранение представления в кэш на 1 мин)
+    # Вывод страницы со списком категорий
+    path('categories/', cache_page(60)(CategoryList.as_view()), name='categories'),
+    # Страница выбранной категории для подписки/отписки
+    path('categories/<int:pk>/', cache_page(60 * 5)(CategoryDetail.as_view()), name='category_subscription'),
+    # Функция-представление для подписки на выбранную категорию
     path('categories/<int:pk>/add_subscribe/', add_subscribe, name='add_subscribe'),
+    # Функция-представление для отписки от выбранной категории
     path('categories/<int:pk>/del_subscribe/', del_subscribe, name='del_subscribe'),
-    path('categories/<int:pk>/', CategoryDetail.as_view(), name='category_subscription'),
-
-
 ]

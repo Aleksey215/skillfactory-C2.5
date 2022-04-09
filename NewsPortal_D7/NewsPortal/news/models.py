@@ -16,6 +16,8 @@ from django.contrib.auth.models import User
 from django.db.models import Sum
 # Для использования ORM(см. определение), нужно импортировать "models"
 from django.db import models
+# Д8 - кэширование
+from django.core.cache import cache
 
 
 # для создания сущностей в БД через ООП, нужно наследоваться от "models.Model"
@@ -152,6 +154,12 @@ class Post(models.Model):
     # добавим абсолютный путь, чтобы после создания нас перебрасывало на страницу с постом
     def get_absolute_url(self):
         return f'/posts/{self.id}'
+
+    # переопределяем метод для удаления объекта из кэша при изменении
+    def save(self, *args, **kwaegs):
+        super().save(*args, **kwaegs)  # сначала вызываем метод родителя, чтобы объект сохранился
+        cache.delete(f'post-{self.pk}')  # затем удаляем его из кэша, чтобы сбросить его
+
 
 #-----------------------------------------------------------------------------------------------
 
